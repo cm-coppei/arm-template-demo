@@ -1,0 +1,33 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageAccountName": {
+            "value": "cmdemostorageaccount"
+        },
+        "storageSKU": {
+            "value": "Standard_LRS"
+        },
+        "storagePrefix": {
+            "value": "cmdemostore"
+        },
+        "location": {
+            "value": "eastus2"
+        },
+        "webAppName": {
+            "value": "cmdemoapp"
+        },
+        "appServiceName": {
+            "value": "DemoApp"
+        },
+        "linuxFxVersion": {
+            "value": "node|16.16.0"
+        },
+        "resourceTags": {
+            "value": {
+                "Environment": "Dev",
+                "Project": "Demo"
+            }
+        }
+    }
+}
