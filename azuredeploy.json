@@ -44,6 +44,46 @@
                 "description": "The Runtime stack of current web app"
             }
         },
+        // NSG Params
+        "networkSecurityGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "This is the name of the network security group"
+            }
+        }, // VNET Params
+        "extendedLocation": {
+            "type": "object"
+        },
+        "virtualNetworkName": {
+            "type": "string"
+        },
+        "resourceGroup": {
+            "type": "string"
+        },
+        "addressSpaces": {
+            "type": "array"
+        },
+        "ipv6Enabled": {
+            "type": "bool"
+        },
+        "subnetCount": {
+            "type": "int"
+        },
+        "subnet0_name": {
+            "type": "string"
+        },
+        "subnet0_addressRange": {
+            "type": "string"
+        },
+        "ddosProtectionPlanEnabled": {
+            "type": "bool"
+        },
+        "firewallEnabled": {
+            "type": "bool"
+        },
+        "bastionEnabled": {
+            "type": "bool"
+        },
         "resourceTags": {
             "type": "object",
             "defaultValue": {
@@ -53,6 +93,46 @@
         }
     },
     "resources": [
+        // NSG
+        {
+            "apiVersion": "2019-02-01",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[parameters('networkSecurityGroupName')]",
+            "location": "[parameters('location')]",
+            "tags": "[parameters('resourceTags')]"
+        },
+        // VNet
+        {
+            "name": "[parameters('virtualNetworkName')]",
+            "type": "Microsoft.Network/VirtualNetworks",
+            "apiVersion": "2021-01-01",
+            "location": "[parameters('location')]",
+            "tags": "[parameters('resourceTags')]",
+            "extendedLocation": "[if(empty(parameters('extendedLocation')), json('null'), parameters('extendedLocation'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "default",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24",
+                            "networkSecurityGroup":{
+                                "id":"[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+                            }
+                        }
+                    }
+                ],
+                "enableDdosProtection": "[parameters('ddosProtectionPlanEnabled')]"
+            }
+        },
+        //Storage
         {
             "name": "[variables('uniqueStorageName')]",
             "type": "Microsoft.Storage/storageAccounts",
@@ -67,6 +147,7 @@
                 "supportsHttpsTrafficOnly": true
             }
         },
+        //APP
         {
             "type": "Microsoft.Web/serverfarms",
             "apiVersion": "2022-03-01",
