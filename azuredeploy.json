@@ -93,6 +93,14 @@
         }
     },
     "resources": [
+        {
+            "name": "[parameters('resourceGroup')]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2021-05-01",
+            "location": "eastus",
+            "dependsOn": [],
+            "tags": "[parameters('resourceTags')]"
+        },
         // NSG
         {
             "apiVersion": "2019-02-01",
@@ -123,8 +131,8 @@
                         "name": "default",
                         "properties": {
                             "addressPrefix": "10.0.0.0/24",
-                            "networkSecurityGroup":{
-                                "id":"[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
                             }
                         }
                     }
