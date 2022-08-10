@@ -4,9 +4,36 @@
     "functions": [],
     "variables": {
         "uniqueStorageName": "[concat(parameters('storagePrefix'),uniqueString(resourceGroup().id))]",
-        "webAppPortalName": "[concat(parameters('webAppName'), uniqueString(resourceGroup().id))]"
+        "webAppPortalName": "[concat(parameters('webAppName'), uniqueString(resourceGroup().id))]",
+        "vnetName": "[parameters('virtualNetworkName')]",
+        "vNetAddressPrefix": "10.1.0.0/16",
+        "vnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "webNSGName": "demo-web-nsg",
+        "webNSGResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('webNSGName'))]",
+        "webVMName": "demo-web-vm",
+        "webVMNicName": "demo-web-vm-nic",
+        "webVMNicPIPName": "demo-web-vm-nic-pip",
+        "webSubnetName": "demo-web-subnet",
+        "webSubnetPrefix": "10.1.0.0/24",
+        "appVMName": "demo-app-vm",
+        "appVMNicName": "demo-app-vm-nic",
+        "appNSGName": "demo-app-nsg",
+        "appSubnetName": "demo-app-subnet",
+        "appSubnetPrefix": "10.1.1.0/24",
+        "appNSGResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('appNSGName'))]",
+        "webVMNicResourceId": "[resourceId('Microsoft.Network/networkInterfaces', variables('webVMNicName'))]",
+        "webVMNicPIPResourceId": "[resourceId('Microsoft.Network/publicIPAddresses', variables('webVMNicPIPName'))]",
+        "webSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('webSubnetName'))]",
+        "appVMNicResourceId": "[resourceId('Microsoft.Network/networkInterfaces', variables('appVMNicName'))]",
+        "appSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('appSubnetName'))]"
     },
     "parameters": {
+        "webVMUsername": {
+            "type": "string"
+        },
+        "webVMPassword": {
+            "type": "securestring"
+        },
         "storageAccountName": {
             "type": "string",
             "minLength": 3,
@@ -97,42 +124,269 @@
         {
             "apiVersion": "2019-02-01",
             "type": "Microsoft.Network/networkSecurityGroups",
-            "name": "[parameters('networkSecurityGroupName')]",
-            "location": "[parameters('location')]",
+            "name": "[variables('webNSGName')]",
+            "location": "[resourceGroup().location]",
             "tags": "[parameters('resourceTags')]",
-            "properties": {}
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "http",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 300,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2019-02-01",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('appNSGName')]",
+            "location": "[resourceGroup().location]",
+            "tags": "[parameters('resourceTags')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "http",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "10.1.0.0/24",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 300,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "DenyInbound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 400,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
         },
         // VNet
         {
             "name": "[parameters('virtualNetworkName')]",
             "type": "Microsoft.Network/VirtualNetworks",
-            "apiVersion": "2021-01-01",
-            "location": "[parameters('location')]",
+            "apiVersion": "2022-01-01",
+            "location": "[resourceGroup().location]",
             "tags": "[parameters('resourceTags')]",
-            "extendedLocation": "[if(empty(parameters('extendedLocation')), json('null'), parameters('extendedLocation'))]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]"
-            ],
+            "dependsOn": [],
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
-                        "10.0.0.0/16"
+                        "[variables('vNetAddressPrefix')]"
                     ]
                 },
                 "subnets": [
                     {
-                        "name": "default",
+                        "name": "[variables('webSubnetName')]",
                         "properties": {
-                            "addressPrefix": "10.0.0.0/24",
-                            "networkSecurityGroup": {
-                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
-                            }
+                            "addressPrefix": "[variables('webSubnetPrefix')]"
+                        }
+                    },
+                    {
+                        "name": "[variables('appSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('appSubnetPrefix')]",
+                            "serviceEndpoints": [ /* IDs of the Azure Services goes here */ ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "sku": {
+                "name": "Basic",
+                "tier": "Regional"
+            },
+            "name": "[variables('webVMNicPIPName')]",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "tier": "presentation"
+            },
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static",
+                "idleTimeoutInMinutes": 4
+            },
+            "dependsOn": []
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('webVMNicName')]",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "tier": "presentation"
+            },
+            "scale": null,
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAddress": "10.1.0.4",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIPAddress": {
+                                "id": "[variables('webVMNicPIPResourceId')]"
+                            },
+                            "subnet": {
+                                "id": "[variables('webSubnetResourceId')]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
                         }
                     }
                 ],
-                "enableDdosProtection": "[parameters('ddosProtectionPlanEnabled')]"
-            }
+                "enableAcceleratedNetworking": false,
+                "enableIPForwarding": false,
+                "primary": true,
+                "networkSecurityGroup": {
+                    "id": "[variables('webNSGResourceId')]"
+                }
+            },
+            "dependsOn": [
+                "[variables('webVMNicPIPName')]",
+                "[variables('vnetResourceId')]",
+                "[variables('webNSGResourceId')]"
+            ]
         },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('appVMNicName')]",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "tier": "application"
+            },
+            "scale": null,
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAddress": "10.1.1.4",
+                            "privateIPAllocationMethod": "Static",
+                            "subnet": {
+                                "id": "[variables('appSubnetResourceId')]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
+                        }
+                    }
+                ],
+                "enableAcceleratedNetworking": false,
+                "enableIPForwarding": false,
+                "primary": true,
+                "networkSecurityGroup": {
+                    "id": "[variables('appNSGResourceId')]"
+                }
+            },
+            "dependsOn": [
+                "[variables('vnetResourceId')]",
+                "[variables('appNSGResourceId')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[variables('webVMName')]",
+            "apiVersion": "2021-07-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "tier": "presentation"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B1ls"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "canonical",
+                        "offer": "0001-com-ubuntu-server-focal",
+                        "sku": "20_04-lts-gen2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "[concat(variables('webVMName'), '-disk')]",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        },
+                        "diskSizeGB": 30
+                    },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[variables('webVMName')]",
+                    "adminUsername": "[parameters('webVMUsername')]",
+                    "adminPassword": "[parameters('webVMPassword')]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": false
+                    },
+                    "secrets": [],
+                    "allowExtensionOperations": true
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[variables('webVMNicResourceId')]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": false
+                    }
+                }
+            },
+            /*"resources": [
+                {
+                    "type": "extensions",
+                    "name": "apache-ext",
+                    "apiVersion": "2018-10-01",
+                    "location": "[resourceGroup().location]",
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.0",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "skipDos2Unix": true
+                        }
+                    },
+                    "dependsOn": [
+                        "[variables('webVMName')]"
+                    ]
+                }
+            ],**/
+            "dependsOn": [
+                "[variables('webVMNicName')]"
+            ]
+        }
+        /*
         //Storage
         {
             "name": "[variables('uniqueStorageName')]",
@@ -186,12 +440,12 @@
                     "linuxFxVersion": "[parameters('linuxFxVersion')]"
                 }
             }
-        }
+        }*/
     ],
     "outputs": {
-        "storageEndpoint": {
+        /*"storageEndpoint": {
             "type": "object",
             "value": "[reference(variables('uniqueStorageName')).primaryEndpoints]"
-        }
+        }*/
     }
 }
