@@ -2,76 +2,23 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "virtualNetworkName": {
+            "value": "demo-vnet"
+        },
         "webVMUsername": {
-            "value": "web_demo_admin"
+            "value": ""
         },
         "webVMPassword": {
-            "value": "supersecretpassword!@12" 
-        },
-        "storageAccountName": {
-            "value": "cmdemostorageaccount"
-        },
-        "storageSKU": {
-            "value": "Standard_LRS"
-        },
-        "storagePrefix": {
-            "value": "cmdemostore"
-        },
-        "location": {
-            "value": "eastus2"
+            "value": "" 
         },
         "webAppName": {
-            "value": "cmdemoapp"
-        },
-        "appServiceName": {
-            "value": "DemoApp"
-        },
-        "linuxFxVersion": {
-            "value": "node|16.16.0"
+            "value": ""
         },
         "resourceTags": {
             "value": {
                 "Environment": "Dev",
                 "Project": "Demo"
             }
-        },
-        "networkSecurityGroupName": {
-            "value": "cm-demo-nsg"
-        },
-        "extendedLocation": {
-            "value": {}
-        },
-        "virtualNetworkName": {
-            "value": "demo-vnet"
-        },
-        "resourceGroup": {
-            "value": "cm-demo-group"
-        },
-        "addressSpaces": {
-            "value": [
-                "10.0.0.0/16"
-            ]
-        },
-        "ipv6Enabled": {
-            "value": false
-        },
-        "subnetCount": {
-            "value": 1
-        },
-        "subnet0_name": {
-            "value": "default"
-        },
-        "subnet0_addressRange": {
-            "value": "10.0.0.0/24"
-        },
-        "ddosProtectionPlanEnabled": {
-            "value": false
-        },
-        "firewallEnabled": {
-            "value": false
-        },
-        "bastionEnabled": {
-            "value": false
         }
     }
 }
