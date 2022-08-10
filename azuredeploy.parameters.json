@@ -39,7 +39,7 @@
             "value": "demo-vnet"
         },
         "resourceGroup": {
-            "value": "cm-demo-group-2"
+            "value": "cm-demo-group"
         },
         "addressSpaces": {
             "value": [
