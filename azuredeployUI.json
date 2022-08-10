@@ -1,5 +1,5 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2021-09-09/uiFormDefinition.schema.json",
     "handler": "Microsoft.Azure.CreateUIDef",
     "version": "0.1.2-preview",
     "parameters": {
@@ -12,37 +12,6 @@
             "microsoft.resources/resourcegroups"
         ],
         "basics": [
-            {
-                "name": "webVMUsername",
-                "type": "Microsoft.Common.TextBox",
-                "label": "Web VM Username",
-                "defaultValue": "",
-                "toolTip": "",
-                "constraints": {
-                    "required": true,
-                    "regex": "",
-                    "validationMessage": ""
-                },
-                "visible": true
-            },
-            {
-                "name": "webVMPassword",
-                "type": "Microsoft.Common.PasswordBox",
-                "label": {
-                    "password": "Web VM Password",
-                    "confirmPassword": "Confirm password"
-                },
-                "toolTip": "",
-                "constraints": {
-                    "required": true,
-                    "regex": "",
-                    "validationMessage": ""
-                },
-                "options": {
-                    "hideConfirmation": true
-                },
-                "visible": true
-            },
             {
                 "name": "webAppName",
                 "type": "Microsoft.Common.TextBox",
@@ -57,23 +26,10 @@
                 "visible": true
             },
             {
-                "name": "virtualNetworkName",
-                "type": "Microsoft.Common.TextBox",
-                "label": "Virtual Network Name",
-                "defaultValue": "",
-                "toolTip": "",
-                "constraints": {
-                    "required": true,
-                    "regex": "",
-                    "validationMessage": ""
-                },
-                "visible": true
-            },
-            {
                 "name": "resourceTags",
                 "type": "Microsoft.Common.TextBox",
                 "label": "Resource Tags",
-                "defaultValue": "{\"Environment\":\"Dev\",\"Project\":\"Demo\"}",
+                "defaultValue": "",
                 "toolTip": "",
                 "constraints": {
                     "required": false,
@@ -83,12 +39,69 @@
                 "visible": true
             }
         ],
-        "steps": [],
+        "steps": [
+            {
+                "name": "webVM",
+                "label": "VM Properties",
+                "elements":[
+                    {
+                        "name": "webVMUsername",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Web VM Username",
+                        "defaultValue": "",
+                        "toolTip": "",
+                        "constraints": {
+                            "required": true,
+                            "regex": "",
+                            "validationMessage": ""
+                        },
+                        "visible": true
+                    },
+                    {
+                        "name": "webVMPassword",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": {
+                            "password": "Web VM Password",
+                            "confirmPassword": "Confirm password"
+                        },
+                        "toolTip": "",
+                        "constraints": {
+                            "required": true,
+                            "regex": "",
+                            "validationMessage": ""
+                        },
+                        "options": {
+                            "hideConfirmation": true
+                        },
+                        "visible": true
+                    }
+                ]
+            },
+            {
+                "name": "networkProperties",
+                "label": "Network Properties",
+                "elements":[
+                    {
+                        "name": "virtualNetworkName",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Virtual Network Name",
+                        "defaultValue": "",
+                        "toolTip": "",
+                        "constraints": {
+                            "required": true,
+                            "regex": "",
+                            "validationMessage": ""
+                        },
+                        "visible": true
+                    }
+                ]
+            }
+        ],
         "outputs": {
-            "webVMUsername": "[basics('webVMUsername')]",
-            "webVMPassword": "[basics('webVMPassword')]",
+            "webVMUsername": "[steps('webVM').webVMUsername]",
+            "webVMPassword": "[steps('webVM').webVMPassword]",
             "webAppName": "[basics('webAppName')]",
-            "virtualNetworkName": "[basics('virtualNetworkName')]",
+            "virtualNetworkName": "[steps('networkProperties').virtualNetworkName]",
             "resourceTags": "[basics('resourceTags')]"
         }
     }
