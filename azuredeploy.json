@@ -93,21 +93,14 @@
         }
     },
     "resources": [
-        {
-            "name": "[parameters('resourceGroup')]",
-            "type": "Microsoft.Resources/resourceGroups",
-            "apiVersion": "2021-05-01",
-            "location": "eastus",
-            "dependsOn": [],
-            "tags": "[parameters('resourceTags')]"
-        },
         // NSG
         {
             "apiVersion": "2019-02-01",
             "type": "Microsoft.Network/networkSecurityGroups",
             "name": "[parameters('networkSecurityGroupName')]",
             "location": "[parameters('location')]",
-            "tags": "[parameters('resourceTags')]"
+            "tags": "[parameters('resourceTags')]",
+            "properties": {}
         },
         // VNet
         {
